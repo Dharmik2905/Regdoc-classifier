@@ -26,7 +26,7 @@ def call_openrouter_chat(
 
     
     # 🔍 DEBUG: see exactly what we got from the environment
-    api_key = st.secrets["OPENROUTER_API_KEY"] #ADD YOUR OWN API KEY
+    api_key = OPENROUTER_API_KEY #ADD YOUR OWN API KEY
     print("[DEBUG] OPENROUTER_API_KEY from env:",(api_key))
 
     if not api_key:
