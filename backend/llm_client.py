@@ -24,8 +24,9 @@ def call_openrouter_chat(
     Returns either parsed JSON (if response_format_json=True) or raw string.
     """
 
+    
     # 🔍 DEBUG: see exactly what we got from the environment
-    api_key = " " #ADD YOUR OWN API KEY
+    api_key = st.secrets["OPENROUTER_API_KEY"] #ADD YOUR OWN API KEY
     print("[DEBUG] OPENROUTER_API_KEY from env:",(api_key))
 
     if not api_key:
