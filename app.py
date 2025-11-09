@@ -142,7 +142,7 @@ if page == "Upload & Analyze":
                 st.markdown("**Citations**")
                 st.table(citations)
 
-            # ------------------- DOCUMENT SUMMARY -------------------
+                        # ------------------- DOCUMENT SUMMARY -------------------
             pages = doc_info.get("pages", [])
             with st.expander("Document summary", expanded=False):
                 if not pages:
@@ -151,15 +151,23 @@ if page == "Upload & Analyze":
                     for p in pages:
                         page_num = p.get("page_num") or p.get("page") or "?"
                         text = (p.get("text") or "").strip()
-                        if len(text) > 600:
-                            text_display = text[:600] + "..."
-                        else:
-                            text_display = text
+
                         st.markdown(f"**Page {page_num}**")
-                        if text_display:
-                            st.write(text_display)
-                        else:
+
+                        if not text:
                             st.write("_No text on this page._")
+                            continue
+
+                        # If text is short, just show it all
+                        if len(text) <= 600:
+                            st.write(text)
+                        else:
+                            # Show a preview + an expander for full text
+                            preview = text[:600] + "..."
+                            st.write(preview)
+
+                            with st.expander("Show full text"):
+                                st.write(text)
 
             # ------------------- HUMAN REVIEW -------------------
             st.markdown("### Human Review")
@@ -198,7 +206,7 @@ if page == "Upload & Analyze":
                         final_category=final_category,
                         reviewer_comment=reviewer_comment.strip(),
                     )
-                    st.success(f"Review for '{filename}'")
+                    st.success(f"Review for '{filename}' saved to history.json.")
                 except Exception as e:
                     st.error(f"Could not save review for {filename}: {e}")
 
@@ -215,7 +223,7 @@ elif page == "History & Audit":
 
     history = load_history()
 
-    # 🔴 Simple clear-history button (no dropdown/expander)
+    # Simple clear-history button (no dropdown/expander)
     st.markdown("#### Clear audit history")
     st.caption(
         "This will permanently delete all entries from the audit trail "
