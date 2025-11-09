@@ -4,8 +4,36 @@ from backend.ingestion import process_file
 from backend.classification import classify_document
 from backend.storage import save_result, load_history
 
+# ----------------------------------------------------------------------
+# BASIC PAGE CONFIG
+# ----------------------------------------------------------------------
 st.set_page_config(page_title="RegDoc Classifier", layout="wide")
 
+# 🔹 Style tweaks for metrics
+st.markdown(
+    """
+    <style>
+    /* Metric value (the big number/text) */
+    div[data-testid="stMetricValue"] > div {
+        font-size: 22px;
+    }
+
+    /* Metric label ("AI Category", "Unsafe", etc.) */
+    div[data-testid="stMetricLabel"] > div {
+        font-size: 14px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# 🔹 Session state for results so UI doesn't reset on interaction
+if "results" not in st.session_state:
+    st.session_state["results"] = []
+
+# ----------------------------------------------------------------------
+# SIDEBAR NAVIGATION
+# ----------------------------------------------------------------------
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Upload & Analyze", "History & Audit"])
 
@@ -34,6 +62,7 @@ if page == "Upload & Analyze":
         disabled=not uploaded_files,
     )
 
+    # ✅ RUN PIPELINE ONLY WHEN BUTTON IS CLICKED
     if run_clicked and uploaded_files:
         st.info(f"{len(uploaded_files)} file(s) selected.")
         progress = st.progress(0.0)
@@ -75,8 +104,12 @@ if page == "Upload & Analyze":
         status_placeholder.empty()
         st.success("All files processed.")
 
-        # ---- SHOW RESULTS + SUMMARY + HITL FOR EACH DOC ----
-        for item in results:
+        # 🔴 Persist results so they survive reruns / widget interactions
+        st.session_state["results"] = results
+
+    # 👇 ALWAYS render results if we have them in session_state
+    if st.session_state["results"]:
+        for item in st.session_state["results"]:
             filename = item["filename"]
             doc_info = item["doc_info"]
             ai_result = item["ai_result"]
@@ -84,8 +117,7 @@ if page == "Upload & Analyze":
             st.markdown("---")
             st.subheader(f"{filename}")
 
-            # Stats / metrics
-            # Stats / metrics (includes image count)
+            # ------------------- METRICS -------------------
             col_top1, col_top2, col_top3, col_top4, col_top5 = st.columns(5)
             col_top1.metric("AI Category", ai_result.get("category", "—"))
             col_top2.metric("Unsafe", "Yes" if ai_result.get("unsafe") else "No")
@@ -96,17 +128,17 @@ if page == "Upload & Analyze":
             )
             col_top5.metric("Image Count", doc_info.get("num_images", 0))
 
-            # AI reasoning
+            # ------------------- AI REASONING -------------------
             st.markdown("**AI Reasoning**")
             st.write(ai_result.get("reasoning", "No reasoning provided."))
 
-            # Citations
+            # ------------------- CITATIONS -------------------
             citations = ai_result.get("citations") or []
             if citations:
                 st.markdown("**Citations**")
                 st.table(citations)
 
-            # 🔹 SUMMARY: page-level text preview (this is what was “missing”)
+            # ------------------- DOCUMENT SUMMARY -------------------
             pages = doc_info.get("pages", [])
             with st.expander("Document summary", expanded=False):
                 if not pages:
@@ -125,17 +157,26 @@ if page == "Upload & Analyze":
                         else:
                             st.write("_No text on this page._")
 
-            # 🧠 Human-in-the-loop review
+            # ------------------- HUMAN REVIEW -------------------
             st.markdown("### Human Review")
+
+            # Stable keys so Streamlit remembers the state
+            override_key = f"override_{filename}"
+            comment_key = f"comment_{filename}"
+
+            # (optional) initialize default override once
+            if override_key not in st.session_state:
+                st.session_state[override_key] = "No override"
+
             override_choice = st.selectbox(
                 "Override AI category (optional)",
                 ["No override", "Public", "Confidential", "Highly Sensitive", "Unsafe"],
-                key=f"override_{filename}",
+                key=override_key,
             )
 
             reviewer_comment = st.text_area(
                 "Reviewer comment",
-                key=f"comment_{filename}",
+                key=comment_key,
                 placeholder="Explain why you approved or changed the AI decision...",
             )
 
@@ -157,6 +198,11 @@ if page == "Upload & Analyze":
                 except Exception as e:
                     st.error(f"Could not save review for {filename}: {e}")
 
+        # Optional: button to clear current session results
+        if st.button("Clear current results"):
+            st.session_state["results"] = []
+            st.experimental_rerun()
+
 # ----------------------------------------------------------------------
 # PAGE 2: History & Audit
 # ----------------------------------------------------------------------
@@ -177,8 +223,10 @@ elif page == "History & Audit":
         st.subheader("Processed Documents")
         df_sorted = df.sort_values("timestamp", ascending=False)
 
+        # only show columns that actually exist in the history file
         show_cols = [
-            c for c in [
+            c
+            for c in [
                 "timestamp",
                 "filename",
                 "ai_category",
