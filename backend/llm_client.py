@@ -23,7 +23,11 @@ def call_openrouter_chat(
     Thin wrapper around OpenRouter chat/completions.
     Returns either parsed JSON (if response_format_json=True) or raw string.
     """
-    api_key = os.getenv("OPENROUTER_API_KEY")
+
+    # 🔍 DEBUG: see exactly what we got from the environment
+    api_key = " " #ADD YOUR OWN API KEY
+    print("[DEBUG] OPENROUTER_API_KEY from env:",(api_key))
+
     if not api_key:
         # Fail early with a clear message instead of 401 later
         raise RuntimeError(
@@ -35,6 +39,10 @@ def call_openrouter_chat(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+
+    # 🔍 DEBUG: check what we’re actually sending in the header (masked)
+    print("[DEBUG] Auth header prefix:", headers["Authorization"][:25])
+    print("[DEBUG] Using model:", model)
 
     payload: Dict[str, Any] = {
         "model": model,
@@ -49,7 +57,11 @@ def call_openrouter_chat(
         payload["response_format"] = {"type": "json_object"}
 
     resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
-    # If unauthorized or any other error, this raises with the right status code
+
+    # 🔍 DEBUG: log status + first part of body before raising
+    print("[DEBUG] OpenRouter status:", resp.status_code)
+    print("[DEBUG] OpenRouter raw response (start):", resp.text[:300])
+
     try:
         resp.raise_for_status()
     except requests.HTTPError as e:

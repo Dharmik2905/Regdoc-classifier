@@ -139,7 +139,7 @@ if page == "Upload & Analyze":
                 placeholder="Explain why you approved or changed the AI decision...",
             )
 
-            if st.button(f"Save"):
+            if st.button("Save", key=f"save_{filename}"):
                 final_category = (
                     ai_result.get("category", "Public")
                     if override_choice == "No override"

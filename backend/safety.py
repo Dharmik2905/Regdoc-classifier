@@ -64,3 +64,51 @@ def profanity_pages(pages: List[Dict[str, Any]]) -> List[int]:
         if any(word in text for word in PROFANITY_WORDS):
             prof_pages.append(p["page_num"])
     return prof_pages
+
+# --- Sensitive equipment / aircraft heuristic ---------------------------------
+
+SENSITIVE_EQUIPMENT_KEYWORDS = [
+    "stealth",
+    "fighter",
+    "fighter jet",
+    "fighter aircraft",
+    "military aircraft",
+    "stealth aircraft",
+    "combat aircraft",
+    "jet aircraft",
+    "f-22",
+    "f-35",
+    "b-2",
+]
+
+PART_SERIAL_TERMS = [
+    "serial",
+    "serial no",
+    "serial number",
+    "part name",
+    "part number",
+    "component id",
+    "component number",
+    "tail number",
+]
+
+def sensitive_equipment_pages(pages: List[Dict[str, Any]]) -> List[int]:
+    """
+    Returns pages whose OCR'd text suggests diagrams of military aircraft /
+    sensitive equipment with part names or serial-like identifiers.
+
+    This is a lightweight stand-in for 'image reasoning' based on text
+    overlays extracted from images.
+    """
+    hits: List[int] = []
+    for p in pages:
+        text = (p.get("text") or "").lower()
+        if not text:
+            continue
+
+        has_aircraft = any(k in text for k in SENSITIVE_EQUIPMENT_KEYWORDS)
+        has_serial_or_parts = any(t in text for t in PART_SERIAL_TERMS)
+
+        if has_aircraft and has_serial_or_parts:
+            hits.append(p["page_num"])
+    return hits
