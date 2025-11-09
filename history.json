@@ -1,0 +1,22 @@
+[
+  {
+    "filename": "fuck.pdf",
+    "ai_category": "Highly Sensitive",
+    "final_category": "Unsafe",
+    "unsafe": false,
+    "timestamp": "2025-11-08T23:49:21.058496Z",
+    "reviewer_comment": "abusive words"
+  },
+  {
+    "filename": "fuck.pdf",
+    "pages": 1,
+    "images": 0,
+    "ai_category": "Highly Sensitive",
+    "final_category": "Unsafe",
+    "unsafe": false,
+    "kid_safe": true,
+    "confidence": 0.9,
+    "timestamp": "2025-11-09T00:04:31.872609Z",
+    "reviewer_comment": "not kidsafe"
+  }
+]
